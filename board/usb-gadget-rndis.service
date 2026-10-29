@@ -1,0 +1,12 @@
+[Unit]
+Description=USB RNDIS network gadget for Windows host
+After=sys-kernel-config.mount
+Before=NetworkManager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/usb-gadget-rndis.sh
+
+[Install]
+WantedBy=multi-user.target

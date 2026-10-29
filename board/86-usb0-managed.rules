@@ -1,0 +1,3 @@
+# Ubuntu's 85-nm-unmanaged.rules hides all USB gadget interfaces from
+# NetworkManager; let it manage the RNDIS link to the Windows host.
+SUBSYSTEM=="net", ACTION=="add|change|move", ENV{INTERFACE}=="usb0", ENV{NM_UNMANAGED}="0"
