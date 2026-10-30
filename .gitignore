@@ -5,3 +5,9 @@
 __pycache__/
 *.pyc
 .venv/
+
+# Photos of the hardware dropped in the repo root for debugging
+/*.jpg
+/*.jpeg
+/*.png
+/*.heic
