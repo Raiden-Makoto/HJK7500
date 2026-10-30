@@ -106,10 +106,10 @@ def row_label(row):
     return f"{row.route} {row.label}".lower()
 
 
-def clock_ok(schedule, now):
+def clock_ok(now):
     # No RTC battery: after a power cut the clock starts years in the past
-    # until ntpd steps it, and every row would read "--".
-    return schedule is None or now >= schedule.data["built_at"]
+    # until ntpd steps it. The app files were deployed after any sane "now".
+    return now >= Path(__file__).stat().st_mtime
 
 
 def render(board, data):
@@ -118,7 +118,7 @@ def render(board, data):
         board.message("Loading schedule")
         return
     now = time.time()
-    if not clock_ok(schedule, now):
+    if not clock_ok(now):
         board.message("setting clock")
         return
     rows = departures.upcoming(schedule, updates, config.ROWS, now, config.DEPARTURES_PER_ROW)
@@ -182,7 +182,7 @@ def main():
             now = time.time()
             lit = power.screen_wanted(
                 now, camera.last_motion, camera.ok, config.AWAKE_HOURS, config.WAKE_S,
-                clock_ok=clock_ok(data.snapshot()[0], now),
+                clock_ok=clock_ok(now),
             )
             if lit and (now >= next_render or not backlight.on):
                 render(board, data)
