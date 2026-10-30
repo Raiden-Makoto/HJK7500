@@ -1,0 +1,8 @@
+#!/bin/sh
+# NetworkManager dispatcher hook. The board has no RTC battery, so after a
+# power cut the clock starts in 2023. ntpd started before the network and
+# takes minutes to step it; restarting once online lets iburst fix it in seconds.
+[ "$2" = up ] || exit 0
+case "$1" in
+    wlan*|eth*) systemctl restart ntp ;;
+esac

@@ -12,6 +12,7 @@ depmod -a
 
 # Load at boot; the SDIO card enumerates without a modalias match for us.
 echo brcmfmac > /etc/modules-load.d/brcmfmac.conf
+install -m 644 wifi-powersave-off.conf /etc/NetworkManager/conf.d/
 
 modprobe brcmfmac
 sleep 5

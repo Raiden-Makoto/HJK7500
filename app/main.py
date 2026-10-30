@@ -111,6 +111,11 @@ def render(board, data):
         board.message("Loading schedule")
         return
     now = time.time()
+    # No RTC battery: after a power cut the clock starts years in the past
+    # until ntpd steps it, and every row would read "--".
+    if now < schedule.data["built_at"]:
+        board.message("setting clock")
+        return
     rows = departures.upcoming(schedule, updates, config.ROWS, now, config.DEPARTURES_PER_ROW)
     board.draw([
         (row_label(row), departures.format_times(times, now))
