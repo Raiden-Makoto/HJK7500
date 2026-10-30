@@ -153,5 +153,7 @@ def parse(buf, trip_ids=None):
 
 def fetch(url, api_key, timeout=30):
     full = f"{url}?{urllib.parse.urlencode({'apikey': api_key})}"
-    with urllib.request.urlopen(full, timeout=timeout) as resp:
+    # TransLink answers 403 to urllib's default "Python-urllib/x.y" agent.
+    req = urllib.request.Request(full, headers={"User-Agent": "hjk7500/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read()
