@@ -6,8 +6,6 @@ import pygame
 TIME_TEMPLATES = ["now, 88 min", "88, 88 min"]
 MARGIN_X = 16
 GAP = 24
-# The top edge of the panel sits under the bezel, so the first row reads as clipped without this.
-FIRST_ROW_NUDGE = 3
 
 
 class Board:
@@ -59,8 +57,6 @@ class Board:
         usable = self.width - 2 * MARGIN_X
         for i, (left, right) in enumerate(lines):
             y = i * self.row_h + (self.row_h - self.ink_h) // 2 - self.ink_top
-            if i == 0:
-                y += FIRST_ROW_NUDGE
             r = self._text(right, usable // 2)
             l = self._text(left, usable - r.get_width() - GAP)
             self.screen.blit(l, (MARGIN_X, y))

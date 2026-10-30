@@ -7,7 +7,7 @@ HOST=${HOST:-pico}
 stage=$(mktemp -d)
 trap 'rm -rf "$stage"' EXIT
 mkdir -p "$stage/hjk7500/app" "$stage/hjk7500/luminator-horizon"
-cp app/*.py app/hjk7500.service "$stage/hjk7500/app/"
+cp app/*.py app/hjk7500.service app/fluxbox-apps "$stage/hjk7500/app/"
 [ -f app/.env ] && cp app/.env "$stage/hjk7500/app/"
 cp luminator-horizon/*.otf luminator-horizon/*.txt "$stage/hjk7500/luminator-horizon/"
 sed -i 's/\r$//' "$stage"/hjk7500/app/* "$stage"/hjk7500/luminator-horizon/*.txt
@@ -17,6 +17,11 @@ scp -qr "$stage/hjk7500" "$HOST:hjk7500.new"
 ssh "$HOST" 'set -e
     rm -rf ~/hjk7500 && mv ~/hjk7500.new ~/hjk7500
     chmod 600 ~/hjk7500/app/.env 2>/dev/null || true
+    sudo install -D -m 644 ~/hjk7500/app/fluxbox-apps ~/.fluxbox/apps
+    pkill -USR2 -x fluxbox || true
+    # The Xfce panel stacks above the board and covers its top 27 px; the
+    # board is the only thing on screen, so skip the Xfce desktop entirely.
+    sudo sed -i "s/^startxfce4 &/# startxfce4 \&  # disabled by hjk7500/" ~/.fluxbox/startup
     sudo install -m 644 ~/hjk7500/app/hjk7500.service /etc/systemd/system/hjk7500.service
     sudo systemctl daemon-reload
     sudo systemctl enable hjk7500.service >/dev/null 2>&1

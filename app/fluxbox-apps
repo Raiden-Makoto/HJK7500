@@ -1,0 +1,9 @@
+# Installed as ~/.fluxbox/apps. Fluxbox adds a title bar even to fullscreen
+# SDL windows, which pushes the board 22 px down and clips the bottom row.
+[app] (title=HJK7500)
+  [Deco]       {NONE}
+  [Position]   (UPPERLEFT) {0 0}
+  [Dimensions] {100% 100%}
+  [Layer]      {2}
+  [Fullscreen] {yes}
+[end]
