@@ -1,0 +1,12 @@
+[Unit]
+Description=Kick the LCD backlight on after a cold power-on
+# After a cold boot the panel sometimes stays dark even though the backlight
+# reports on; toggling it repeatedly has been what brings it back.
+After=systemd-backlight@backlight:backlight.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'b=/sys/class/backlight/backlight; for i in 1 2 3 4 5 6 7 8 9 10; do echo 0 > $$b/brightness; sleep 0.5; cat $$b/max_brightness > $$b/brightness; sleep 0.5; done'
+
+[Install]
+WantedBy=multi-user.target

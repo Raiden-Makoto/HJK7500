@@ -11,9 +11,6 @@ Environment=XAUTHORITY=/home/ubuntu/.Xauthority
 Environment=PYTHONUNBUFFERED=1
 ExecStartPre=/bin/sh -c 'until /usr/bin/xset q >/dev/null 2>&1; do sleep 0.5; done'
 ExecStartPre=-/usr/bin/xset s off s noblank -dpms
-# After a cold power-on the backlight reports on but stays dark until the
-# brightness value actually changes, so cycle it. "+" runs this as root.
-ExecStartPre=+/bin/sh -c 'echo 0 > /sys/class/backlight/backlight/brightness; cat /sys/class/backlight/backlight/max_brightness > /sys/class/backlight/backlight/brightness'
 ExecStart=/usr/bin/python3 /home/ubuntu/hjk7500/app/main.py
 TimeoutStartSec=120
 Restart=always
