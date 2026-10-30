@@ -1,13 +1,18 @@
 import datetime as dt
 import sys
+import time
 import unittest
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import numpy as np
+
 import departures
 import gtfs_rt
+import motion
+import power
 from config import Row
 from schedule import Schedule
 
@@ -132,6 +137,70 @@ class UpcomingTest(unittest.TestCase):
     def test_format(self):
         self.assertEqual(departures.format_times([], 0), "--")
         self.assertEqual(departures.format_times([30, 16 * 60 + 5], 0), "now, 16 min")
+
+
+class ScreenWantedTest(unittest.TestCase):
+    hours, wake = (8, 21), 300
+
+    def at(self, hh, mm):
+        return time.mktime((2026, 10, 30, hh, mm, 0, 0, 0, -1))
+
+    def wanted(self, now, last_motion, camera_ok=True, clock_ok=True):
+        return power.screen_wanted(now, last_motion, camera_ok, self.hours, self.wake, clock_ok)
+
+    def test_motion_wakes_for_five_minutes(self):
+        moved = self.at(12, 0)
+        self.assertTrue(self.wanted(moved + 299, moved))
+        self.assertFalse(self.wanted(moved + 301, moved))
+
+    def test_dark_without_motion(self):
+        self.assertFalse(self.wanted(self.at(12, 0), 0))
+
+    def test_night_ignores_motion(self):
+        for hh in (21, 23, 3, 7):
+            now = self.at(hh, 30)
+            self.assertFalse(self.wanted(now, now))
+
+    def test_no_camera_stays_lit_by_day_only(self):
+        self.assertTrue(self.wanted(self.at(8, 0), 0, camera_ok=False))
+        self.assertFalse(self.wanted(self.at(22, 0), 0, camera_ok=False))
+
+    def test_unset_clock_stays_lit(self):
+        self.assertTrue(self.wanted(self.at(3, 0), 0, clock_ok=False))
+
+
+class MotionDetectorTest(unittest.TestCase):
+    def setUp(self):
+        self.rng = np.random.default_rng(0)
+        self.room = self.rng.integers(60, 120, (120, 160), dtype=np.uint8)
+        self.d = motion.MotionDetector(pixel_delta=25, fraction=0.04)
+        for _ in range(motion.WARMUP_FRAMES):
+            self.d.feed(self.noisy(self.room))
+
+    def noisy(self, frame):
+        noise = self.rng.integers(-8, 9, frame.shape)
+        return np.clip(frame.astype(int) + noise, 0, 255).astype(np.uint8)
+
+    def test_still_room_is_not_motion(self):
+        self.assertFalse(any(self.d.feed(self.noisy(self.room)) for _ in range(50)))
+
+    def test_hand_needs_two_frames(self):
+        hand = self.room.copy()
+        hand[30:90, 50:90] = 230   # ~12% of the picture
+        self.assertFalse(self.d.feed(self.noisy(hand)))
+        self.assertTrue(self.d.feed(self.noisy(hand)))
+
+    def test_small_change_is_ignored(self):
+        speck = self.room.copy()
+        speck[10:20, 10:20] = 230  # ~0.5% of the picture
+        self.assertFalse(any(self.d.feed(self.noisy(speck)) for _ in range(5)))
+
+    def test_moved_object_fades_into_background(self):
+        moved = self.room.copy()
+        moved[30:90, 50:90] = 230
+        results = [self.d.feed(self.noisy(moved)) for _ in range(120)]
+        self.assertTrue(results[1])
+        self.assertFalse(any(results[-10:]))
 
 
 if __name__ == "__main__":

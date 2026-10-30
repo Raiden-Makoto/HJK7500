@@ -32,5 +32,17 @@ APP_DIR = Path(__file__).resolve().parent
 FONT_PATH = APP_DIR.parent / "luminator-horizon" / "luminator-horizon-doublestack.otf"
 CACHE_DIR = Path(os.environ.get("HJK7500_CACHE", Path.home() / ".cache" / "hjk7500"))
 
+# Screen power: dark unless the camera saw motion in the last WAKE_S seconds,
+# and always dark outside AWAKE_HOURS (local [start, end)).
+AWAKE_HOURS = (8, 21)
+WAKE_S = 5 * 60
+BACKLIGHT_DIR = Path("/sys/class/backlight/backlight")
+
+CAMERA_DEVICE = "/dev/video1"
+CAMERA_SIZE = (640, 480)
+CAMERA_FORMAT = "YUYV"
+MOTION_PIXEL_DELTA = 25     # 0-255 brightness change for a pixel to count
+MOTION_FRACTION = 0.04      # share of pixels that must change, two frames running
+
 AMBER = (255, 170, 0)
 BLACK = (0, 0, 0)

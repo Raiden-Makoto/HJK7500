@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import config
 import departures
 import gtfs_rt
+import power
 import schedule as sched
 
 
@@ -105,15 +106,19 @@ def row_label(row):
     return f"{row.route} {row.label}".lower()
 
 
+def clock_ok(schedule, now):
+    # No RTC battery: after a power cut the clock starts years in the past
+    # until ntpd steps it, and every row would read "--".
+    return schedule is None or now >= schedule.data["built_at"]
+
+
 def render(board, data):
     schedule, updates = data.snapshot()
     if schedule is None:
         board.message("Loading schedule")
         return
     now = time.time()
-    # No RTC battery: after a power cut the clock starts years in the past
-    # until ntpd steps it, and every row would read "--".
-    if now < schedule.data["built_at"]:
+    if not clock_ok(schedule, now):
         board.message("setting clock")
         return
     rows = departures.upcoming(schedule, updates, config.ROWS, now, config.DEPARTURES_PER_ROW)
@@ -150,9 +155,23 @@ def main():
         return
 
     import pygame
+    import motion
+
+    def awake_hours_now():
+        start, end = config.AWAKE_HOURS
+        return start <= time.localtime().tm_hour < end
+
+    camera = motion.Camera(
+        config.CAMERA_DEVICE, config.CAMERA_SIZE, config.CAMERA_FORMAT,
+        motion.MotionDetector(config.MOTION_PIXEL_DELTA, config.MOTION_FRACTION),
+        active=awake_hours_now, log=log,
+    )
+    backlight = power.Backlight(config.BACKLIGHT_DIR, log)
 
     stop = threading.Event()
     threading.Thread(target=data.run, args=(stop,), daemon=True).start()
+    threading.Thread(target=camera.run, args=(stop,), daemon=True).start()
+    next_render = 0
     try:
         while True:
             for event in pygame.event.get():
@@ -160,10 +179,19 @@ def main():
                     event.type == pygame.KEYDOWN and event.key in (pygame.K_ESCAPE, pygame.K_q)
                 ):
                     return
-            render(board, data)
-            time.sleep(5)
+            now = time.time()
+            lit = power.screen_wanted(
+                now, camera.last_motion, camera.ok, config.AWAKE_HOURS, config.WAKE_S,
+                clock_ok=clock_ok(data.snapshot()[0], now),
+            )
+            if lit and (now >= next_render or not backlight.on):
+                render(board, data)
+                next_render = now + 5
+            backlight.set(lit)
+            time.sleep(0.25)
     finally:
         stop.set()
+        backlight.set(True)
 
 
 if __name__ == "__main__":

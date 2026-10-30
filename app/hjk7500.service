@@ -6,11 +6,14 @@ After=display-manager.service
 
 [Service]
 User=ubuntu
+SupplementaryGroups=video
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/ubuntu/.Xauthority
 Environment=PYTHONUNBUFFERED=1
 ExecStartPre=/bin/sh -c 'until /usr/bin/xset q >/dev/null 2>&1; do sleep 0.5; done'
 ExecStartPre=-/usr/bin/xset s off s noblank -dpms
+# Let the app switch the backlight for night mode and wake-on-motion ("+" = as root).
+ExecStartPre=+/bin/sh -c 'chgrp video /sys/class/backlight/backlight/brightness && chmod g+w /sys/class/backlight/backlight/brightness'
 ExecStart=/usr/bin/python3 /home/ubuntu/hjk7500/app/main.py
 TimeoutStartSec=120
 Restart=always
