@@ -95,7 +95,8 @@ class Data:
                 self.refresh_schedule()
                 next_schedule_check = time.time() + 3600
             self.refresh_realtime()
-            stop.wait(config.REALTIME_INTERVAL_S)
+            # Wi-Fi is often still connecting at boot, so retry quickly until the first success.
+            stop.wait(config.REALTIME_INTERVAL_S if self.realtime_ok else 5)
 
 
 def row_label(row):
