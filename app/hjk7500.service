@@ -1,0 +1,18 @@
+[Unit]
+Description=HJK7500 TransLink departure board
+After=graphical.target network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/ubuntu/.Xauthority
+Environment=PYTHONUNBUFFERED=1
+# Keep the screen from blanking; harmless if X isn't up yet.
+ExecStartPre=-/usr/bin/xset s off s noblank -dpms
+ExecStart=/usr/bin/python3 /home/ubuntu/hjk7500/app/main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
